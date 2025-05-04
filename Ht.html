@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Galaxy with Floating Image and Info Panel</title>
+  <style>
+    body {
+        margin: 0;
+        overflow: hidden; /* Prevent scroll bars */
+        background-color: black;
+        font-family: sans-serif; /* Add a default font */
+        color: #eee; /* Light text color */
+    }
+
+    canvas {
+        display: block;
+        position: absolute; /* Ensure canvas is in the background */
+        top: 0;
+        left: 0;
+        z-index: 0; /* Place behind other elements */
+    }
+
+    /* --- Image Styles (Your Photo) --- */
+    #image {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%); /* Center initially */
+      max-width: 400px; /* Initial size */
+      height: auto;
+      border: 4px solid rgba(0, 136, 255, 0.7);
+      box-shadow: 0 0 20px rgba(0, 136, 255, 0.8);
+      border-radius: 10px;
+      z-index: 1; /* Place above canvas */
+      cursor: pointer; /* Indicate it's clickable */
+
+      /* Initial floating animation */
+      animation: float 5s ease-in-out infinite;
+
+      /* Transition for movement */
+      transition: all 0.8s ease-in-out;
+    }
+
+    /* Style for the image when it moves left */
+    #image.moved {
+      left: 20%; /* Move to the left */
+      transform: translate(-50%, -50%); /* Still center vertically */
+      max-width: 200px; /* Make it smaller */
+      border-color: rgba(0, 255, 136, 0.7); /* Optional: Change border color */
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.8); /* Optional: Change shadow color */
+      animation: none; /* Stop the floating animation */
+    }
+
+    /* --- Floating Animation (Initial State) --- */
+    @keyframes float {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+      50% {
+        transform: translate(-50%, -52%) scale(1.02); /* Slightly smaller float */
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+
+    /* --- Info Panel Styles --- */
+    #info-panel {
+        position: absolute;
+        top: 50%;
+        right: -500px; /* Start off-screen to the right - adjust if panel is wider */
+        transform: translateY(-50%); /* Center vertically */
+        width: 400px; /* Set a width */
+        padding: 20px;
+        background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
+        border: 4px solid rgba(0, 136, 255, 0.7);
+        box-shadow: 0 0 20px rgba(0, 136, 255, 0.8);
+        border-radius: 10px;
+        z-index: 1; /* Place above canvas */
+        opacity: 0; /* Start hidden */
+        pointer-events: none; /* Cannot interact when hidden */
+
+        /* Transition for appearing */
+        transition: right 0.8s ease-out, opacity 0.8s ease-out;
+        box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    }
+
+    /* Style for the info panel when it's visible */
+    #info-panel.visible {
+        right: 10%; /* Move onto the screen */
+        opacity: 1; /* Become visible */
+        pointer-events: auto; /* Can interact when visible */
+    }
+
+    #info-panel h2 {
+        color: #0088ff; /* Accent color for headings */
+        margin-top: 0;
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(0, 136, 255, 0.5);
+        padding-bottom: 5px;
+    }
+
+    #info-panel p {
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+
+    /* --- Skills Container (Logos) --- */
+    .skills-container {
+        display: flex;
+        flex-wrap: wrap; /* Allow skills to wrap to the next line */
+        gap: 15px; /* Space between skill items */
+        justify-content: center; /* Center the logos if they don't fill the row */
+    }
+
+    /* Style for each skill item container (div) */
+    .skill-item {
+        display: flex; /* Use flexbox to center the image inside */
+        align-items: center;
+        justify-content: center;
+        width: 50px; /* Fixed size for the logo container */
+        height: 50px;
+        background-color: rgba(255, 255, 255, 0.05); /* Very subtle background */
+        border: 1px solid rgba(0, 136, 255, 0.3);
+        border-radius: 8px; /* Slightly rounded corners */
+        box-shadow: 0 0 5px rgba(0, 136, 255, 0.4);
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Smooth hover effect */
+        cursor: pointer; /* Indicate clickable/interactive */
+    }
+
+    .skill-item:hover {
+        transform: scale(1.1); /* Enlarge slightly on hover */
+        box-shadow: 0 0 10px rgba(0, 136, 255, 0.8); /* Brighter shadow on hover */
+    }
+
+
+    /* Style for the skill logo image inside the container */
+    .skill-item img {
+        display: block; /* Remove extra space below image */
+        max-width: 80%; /* Make image slightly smaller than the container */
+        max-height: 80%;
+        height: auto; /* Maintain aspect ratio */
+        object-fit: contain; /* Ensure the image fits without distortion */
+    }
+
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      #image {
+        max-width: 250px; /* Smaller initial size on small screens */
+      }
+      #image.moved {
+        left: 50%; /* Center image on smaller screens when moved */
+        transform: translate(-50%, -80%); /* Position above text */
+        max-width: 150px;
+      }
+      #info-panel {
+        top: 50%;
+        right: -90%; /* Start off-screen (adjust based on width) */
+        width: 80%; /* Wider panel on small screens */
+        transform: translateY(-50%); /* Center vertically */
+        padding: 15px;
+      }
+      #info-panel.visible {
+         right: 10%; /* Move onto screen (adjust based on width) */
+      }
+      .skill-item {
+          width: 45px; /* Smaller logo size */
+          height: 45px;
+      }
+    }
+
+     @media (max-width: 480px) {
+        #image {
+           max-width: 180px;
+        }
+         #image.moved {
+           max-width: 120px;
+           transform: translate(-50%, -100%); /* Position higher above text */
+        }
+        #info-panel {
+           width: 90%;
+           right: -100%;
+           padding: 10px;
+        }
+         #info-panel.visible {
+           right: 5%;
+        }
+        #info-panel h2 {
+            font-size: 1.2em;
+        }
+         #info-panel p {
+            font-size: 0.8em;
+         }
+         .skill-item {
+            width: 40px; /* Even smaller logo size */
+            height: 40px;
+            gap: 10px; /* Reduce gap */
+         }
+     }
+
+  </style>
+</head>
+<body>
+
+  <!-- Center Image -->
+  <!-- The image will move left on click, and back on second click -->
+  <img id="image" src="Hl.jpg" alt="My Image">
+
+  <!-- Info Panel (Initially hidden off-screen) -->
+  <div id="info-panel">
+    <h2>Who am I?</h2>
+    <p>
+      I am a student of class 9. My dream is to make software and games which help people.
+    </p>
+
+    <h2>Skills I know</h2>
+    <div class="skills-container">
+        <!-- Skill Logos from URLs -->
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg" alt="Python Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/en/3/30/Java_programming_language_logo.svg" alt="Java Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/C_Programming_Language.svg/800px-C_Programming_Language.svg.png" alt="C Language Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/4/4f/Csharp_Logo.png" alt="C# Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/ISO_C%2B%2B_Logo.svg/800px-ISO_C%2B%2B_Logo.svg.png" alt="C++ Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Unofficial_JavaScript_logo_2.svg/800px-Unofficial_JavaScript_logo_2.svg.png" alt="JavaScript Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/CSS3_logo_and_wordmark.svg/800px-CSS3_logo_and_wordmark.svg.png" alt="CSS Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/HTML5_logo_and_wordmark.svg/800px-HTML5_logo_and_wordmark.svg.png" alt="HTML Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Adobe_Premiere_Pro_CC_icon.svg/800px-Adobe_Premiere_Pro_CC_icon.svg.png" alt="Adobe Premiere Pro Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Adobe_After_Effects_CC_icon.svg/800px-Adobe_After_Effects_CC_icon.svg.png" alt="Adobe After Effects Logo"></div>
+        <div class="skill-item"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/800px-Blender_logo_no_text.svg.png" alt="Blender Logo"></div>
+    </div>
+  </div>
+
+  <!-- Three.js Background -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    var scene, camera, renderer, stars;
+    // No need for the imageClicked flag anymore for toggling
+    // var imageClicked = false;
+
+    function init() {
+      // --- Three.js Setup ---
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // --- Stars Setup ---
+      const starGeometry = new THREE.BufferGeometry();
+      const starMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 1.5,
+        map: createStarTexture(),
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true
+      });
+
+      const starVertices = [];
+      const numStars = 5000;
+      const starFieldSize = 2000;
+
+      for (let i = 0; i < numStars; i++) {
+        const x = (Math.random() - 0.5) * starFieldSize;
+        const y = (Math.random() - 0.5) * starFieldSize;
+        const z = (Math.random() - 0.5) * starFieldSize;
+        starVertices.push(x, y, z);
+      }
+
+      starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+
+      stars = new THREE.Points(starGeometry, starMaterial);
+      scene.add(stars);
+
+      camera.position.z = 300;
+
+      // --- Event Listener for Image Click (Toggle Functionality) ---
+      const imageElement = document.getElementById('image');
+      const infoPanel = document.getElementById('info-panel');
+
+      imageElement.addEventListener('click', function() {
+        // Check if the image is currently in the 'moved' state
+        if (imageElement.classList.contains('moved')) {
+            // --- Return to Original State ---
+            imageElement.classList.remove('moved');
+            infoPanel.classList.remove('visible');
+
+            // Re-enable the floating animation by removing the inline style override.
+            // The animation defined in the #image CSS rule will take over again.
+            imageElement.style.animation = ''; // Let CSS handle the animation
+
+        } else {
+            // --- Move to Side State ---
+            imageElement.classList.add('moved');
+            infoPanel.classList.add('visible');
+
+            // Explicitly stop the floating animation when moved.
+            // Although the .moved class sets 'animation: none', this is more direct.
+            imageElement.style.animation = 'none';
+        }
+      });
+
+
+      // --- Start Animation Loop ---
+      animate();
+    }
+
+    // Helper function to create a simple star texture
+    function createStarTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 16;
+      canvas.height = 16;
+      const context = canvas.getContext('2d');
+      context.beginPath();
+      context.arc(8, 8, 8, 0, Math.PI * 2, false);
+      context.fillStyle = 'white';
+      context.fill();
+      return new THREE.CanvasTexture(canvas);
+    }
+
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Rotate the star field
+      stars.rotation.x += 0.0005;
+      stars.rotation.y += 0.0005;
+
+      renderer.render(scene, camera);
+    }
+
+    // --- Handle Window Resizing ---
+    window.addEventListener('resize', function() {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
+
+    // --- Initialize the scene ---
+    init();
+  </script>
+</body>
+</html>
